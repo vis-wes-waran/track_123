@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>JunkStop AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080B0F;--s1:#0F1318;--s2:#161B22;--s3:#1E252F;--s4:#252D38;
+  --b1:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.11);--b3:rgba(255,255,255,0.18);
+  --t1:#EBE8E2;--t2:#7A8190;--t3:#424A55;
+  --green:#5AE87A;--gd:rgba(90,232,122,0.1);--gb:rgba(90,232,122,0.22);
+  --red:#FF5B5B;--rd:rgba(255,91,91,0.1);--rb:rgba(255,91,91,0.22);
+  --amber:#FFAD3B;--ad:rgba(255,173,59,0.1);--ab:rgba(255,173,59,0.22);
+  --blue:#4DA9FF;--bd:rgba(77,169,255,0.1);
+  --purple:#A78BFF;--pd:rgba(167,139,255,0.1);
+  --r1:8px;--r2:14px;--r3:20px;
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--fb);background:var(--bg);color:var(--t1);display:flex;flex-direction:column}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:998;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E")}
+
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;z-index:500;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;text-align:center;transition:opacity .45s,transform .45s}
+#splash.out{opacity:0;transform:scale(1.03);pointer-events:none}
+.sp-mark{width:72px;height:72px;border-radius:20px;background:var(--gd);border:1px solid var(--gb);display:flex;align-items:center;justify-content:center;margin:0 auto 1.6rem;animation:mark-pulse 2.8s ease-in-out infinite}
+@keyframes mark-pulse{0%,100%{box-shadow:0 0 0 0 rgba(90,232,122,.14)}50%{box-shadow:0 0 0 16px rgba(90,232,122,0)}}
+.sp-mark svg{width:34px;height:34px}
+.sp-h1{font-family:var(--fh);font-size:clamp(1.9rem,6.5vw,2.9rem);font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:.8rem}
+.sp-h1 em{font-style:normal;color:var(--green)}
+.sp-sub{font-size:14px;color:var(--t2);max-width:330px;line-height:1.8;margin-bottom:2.2rem}
+.sp-form{width:100%;max-width:360px}
+.sp-input{width:100%;padding:12px 15px;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r2);color:var(--t1);font-family:var(--fb);font-size:15px;outline:none;margin-bottom:11px;transition:border-color .2s}
+.sp-input:focus{border-color:var(--gb)}
+.sp-input::placeholder{color:var(--t3)}
+.sp-gl{font-size:11px;color:var(--t3);text-align:left;margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+.sp-goals{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px}
+.sp-g{padding:9px 7px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);color:var(--t2);font-family:var(--fb);font-size:12px;cursor:pointer;transition:all .18s}
+.sp-g.on{background:var(--gd);border-color:var(--gb);color:var(--green)}
+.sp-cta{width:100%;padding:13px;background:var(--green);border:none;border-radius:var(--r2);color:#06100A;font-family:var(--fh);font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s}
+.sp-cta:hover{opacity:.88}.sp-cta:active{transform:scale(.98)}
+
+/* ── LAYOUT ── */
+#app{flex:1;display:none;flex-direction:column;overflow:hidden}
+#app.on{display:flex}
+.topbar{flex-shrink:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 1.2rem;background:rgba(8,11,15,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--b1);z-index:10}
+.tb-brand{font-family:var(--fh);font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px}
+.tb-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+.api-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--s2);border:1px solid var(--b1);border-radius:99px;font-size:11px}
+.api-led{width:5px;height:5px;border-radius:50%;background:var(--t3);transition:background .3s}
+.api-led.ok{background:var(--green);box-shadow:0 0 4px var(--green)}
+.api-led.err{background:var(--red)}
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;padding:1.2rem 1.2rem 88px;display:none;animation:pg .22s ease;-webkit-overflow-scrolling:touch}
+.page.on{display:block}
+@keyframes pg{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.nav{flex-shrink:0;display:flex;background:rgba(10,14,20,.96);backdrop-filter:blur(24px);border-top:1px solid var(--b1);padding:5px 0 max(5px,env(safe-area-inset-bottom))}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 0;border:none;background:transparent;color:var(--t3);font-family:var(--fb);cursor:pointer;transition:color .18s}
+.ni.on{color:var(--green)}.ni svg{width:20px;height:20px}
+.ni.on svg{transform:scale(1.12)}.ni-lbl{font-size:10px;font-weight:500;letter-spacing:.02em}
+
+/* ── SHARED ── */
+.slabel{font-family:var(--fh);font-size:11px;font-weight:600;color:var(--t3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.75rem}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600}
+.tag.good{background:var(--gd);color:var(--green);border:1px solid var(--gb)}
+.tag.bad{background:var(--rd);color:var(--red);border:1px solid var(--rb)}
+.tag.mod{background:var(--ad);color:var(--amber);border:1px solid var(--ab)}
+.btn{width:100%;padding:13px;border:none;border-radius:var(--r2);font-family:var(--fh);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s}
+.btn:active{transform:scale(.98)}.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-green{background:var(--green);color:#06100A}.btn-green:hover{opacity:.88}
+.btn-outline{background:transparent;border:1px solid var(--b2);color:var(--t1)}.btn-outline:hover{background:var(--s2)}
+.btn-red{background:var(--rd);border:1px solid var(--rb);color:var(--red)}
+.loading{display:flex;gap:5px;justify-content:center;padding:2.5rem 0}
+.orb{width:8px;height:8px;border-radius:50%;animation:orb 1.3s ease-in-out infinite}
+.orb:nth-child(1){background:var(--green)}.orb:nth-child(2){background:var(--amber);animation-delay:.18s}.orb:nth-child(3){background:var(--red);animation-delay:.36s}
+@keyframes orb{0%,80%,100%{transform:scale(.4);opacity:.25}40%{transform:scale(1);opacity:1}}
+.empty{text-align:center;padding:2.5rem 1rem}
+.empty-ic{font-size:36px;margin-bottom:.8rem}.empty-t{font-size:14px;color:var(--t2);margin-bottom:3px}.empty-s{font-size:12px;color:var(--t3)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);backdrop-filter:blur(10px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .28s}
+.modal-overlay.on{opacity:1;pointer-events:all}
+.modal-box{width:100%;max-width:480px;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r3) var(--r3) 0 0;padding:1.4rem 1.4rem max(1.4rem,env(safe-area-inset-bottom));transform:translateY(30px);transition:transform .3s ease;max-height:92vh;overflow-y:auto}
+.modal-overlay.on .modal-box{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;border-radius:99px;background:var(--b3);margin:0 auto .9rem}
+.modal-title{font-family:var(--fh);font-size:17px;font-weight:700;margin-bottom:.5rem}
+.modal-sub{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:1.2rem}
+.confirm-food-row{display:flex;align-items:center;gap:12px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:.9rem;margin-bottom:1.1rem}
+.confirm-emoji{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.confirm-name{font-size:15px;font-weight:500;margin-bottom:3px}
+.confirm-cal{font-size:12px;color:var(--t2)}
+.meal-type-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:1.1rem}
+.mtype{padding:8px 4px;text-align:center;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);font-size:12px;cursor:pointer;transition:all .18s;color:var(--t2)}
+.mtype.on{background:var(--gd);border-color:var(--gb);color:var(--green)}
+.modal-btns{display:flex;gap:8px}.modal-btns .btn{flex:1}
+
+/* ── REPEAT WARNING BOX (inside modal) ── */
+.repeat-warn{background:linear-gradient(135deg,rgba(255,91,91,0.15),rgba(255,91,91,0.05));border:1px solid var(--rb);border-radius:var(--r2);padding:.9rem 1rem;margin-bottom:1rem}
+.repeat-warn-head{display:flex;align-items:center;gap:8px;margin-bottom:.55rem}
+.repeat-warn-ic{font-size:20px}
+.repeat-warn-title{font-family:var(--fh);font-size:14px;font-weight:700;color:var(--red)}
+.repeat-warn-count{font-size:11px;background:var(--rd);color:var(--red);border:1px solid var(--rb);border-radius:99px;padding:2px 8px;font-weight:600}
+.repeat-warn-txt{font-size:12px;color:rgba(255,91,91,0.85);line-height:1.7}
+
+/* ── HOME ── */
+.hero{background:linear-gradient(135deg,rgba(90,232,122,.07),rgba(90,232,122,.015));border:1px solid rgba(90,232,122,.14);border-radius:var(--r3);padding:1.25rem;margin-bottom:1rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(90,232,122,.08),transparent 70%)}
+.hero-greet{font-size:12px;color:var(--t2);margin-bottom:2px}
+.hero-name{font-family:var(--fh);font-size:21px;font-weight:700;margin-bottom:1rem}
+.ring-row{display:flex;align-items:center;gap:13px}
+.ring-wrap{position:relative;width:66px;height:66px;flex-shrink:0}
+.ring-wrap svg{width:66px;height:66px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.05);stroke-width:4.5}
+.ring-fg{fill:none;stroke-width:4.5;stroke-linecap:round;stroke-dasharray:182;stroke-dashoffset:182;transition:stroke-dashoffset 1s ease}
+.ring-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--fh);font-size:16px;font-weight:700}
+.ring-num small{font-size:8px;font-weight:400;color:var(--t2);letter-spacing:.05em}
+.ring-meta h3{font-family:var(--fh);font-size:14px;font-weight:600;margin-bottom:2px}
+.ring-meta p{font-size:12px;color:var(--t2);line-height:1.55}
+
+.cal-bar-wrap{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:.9rem 1rem;margin-bottom:1rem}
+.cal-bar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
+.cal-bar-title{font-size:12px;color:var(--t2);font-weight:500}
+.cal-bar-val{font-family:var(--fh);font-size:14px;font-weight:700}
+.cal-track{height:7px;background:var(--s3);border-radius:99px;overflow:hidden;margin-bottom:.5rem}
+.cal-track-fill{height:100%;border-radius:99px;transition:width .8s ease;background:linear-gradient(90deg,var(--green),var(--amber))}
+.cal-track-fill.over{background:linear-gradient(90deg,var(--amber),var(--red))}
+.cal-breakdown{display:flex;gap:8px}
+.cal-macro{flex:1;text-align:center}
+.cal-macro-val{font-family:var(--fh);font-size:13px;font-weight:600}
+.cal-macro-lbl{font-size:10px;color:var(--t3);margin-top:1px}
+
+.gb-split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.gb-tile{border-radius:var(--r2);padding:.9rem;text-align:center}
+.gb-tile.good-tile{background:var(--gd);border:1px solid var(--gb)}
+.gb-tile.bad-tile{background:var(--rd);border:1px solid var(--rb)}
+.gb-count{font-family:var(--fh);font-size:28px;font-weight:800}
+.gb-tile.good-tile .gb-count{color:var(--green)}
+.gb-tile.bad-tile .gb-count{color:var(--red)}
+.gb-lbl{font-size:11px;margin-top:2px}
+.gb-tile.good-tile .gb-lbl{color:var(--green);opacity:.75}
+.gb-tile.bad-tile .gb-lbl{color:var(--red);opacity:.75}
+
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.st{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:.85rem}
+.st-lbl{font-size:11px;color:var(--t3);margin-bottom:4px;font-weight:500}
+.st-val{font-family:var(--fh);font-size:22px;font-weight:700}
+.st-sub{font-size:10px;color:var(--t3);margin-top:1px}
+.st.green .st-val{color:var(--green)}.st.red .st-val{color:var(--red)}
+.st.amber .st-val{color:var(--amber)}.st.blue .st-val{color:var(--blue)}
+
+.coach{background:var(--s1);border:1px solid var(--b1);border-left:3px solid var(--purple);border-radius:var(--r2);padding:.9rem 1rem;margin-bottom:1rem}
+.coach-lbl{font-size:10px;color:var(--purple);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.coach-txt{font-size:13px;color:var(--t1);line-height:1.7}
+
+.recent-list{display:flex;flex-direction:column;gap:7px}
+.ri{display:flex;align-items:center;gap:10px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:10px 12px;transition:border-color .18s}
+.ri-ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ri-food{font-size:13px;font-weight:500;margin-bottom:1px}
+.ri-meta{font-size:11px;color:var(--t3)}
+.ri-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-left:auto;flex-shrink:0}
+.ri-cal{font-size:11px;color:var(--t2);font-weight:500}
+
+/* ── STREAK CELEBRATION BANNER ── */
+.streak-banner{background:linear-gradient(135deg,rgba(90,232,122,0.15),rgba(90,232,122,0.04));border:1px solid rgba(90,232,122,0.3);border-radius:var(--r2);padding:.9rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px}
+.streak-banner-ic{font-size:26px;flex-shrink:0}
+.streak-banner-title{font-family:var(--fh);font-size:14px;font-weight:700;color:var(--green);margin-bottom:2px}
+.streak-banner-sub{font-size:12px;color:rgba(90,232,122,0.75);line-height:1.5}
+
+/* ── AI DAILY SUMMARY ── */
+.sum-btn{width:100%;padding:12px;background:linear-gradient(135deg,rgba(167,139,255,0.15),rgba(167,139,255,0.05));border:1px solid rgba(167,139,255,0.3);border-radius:var(--r2);color:var(--purple);font-family:var(--fh);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:1rem;letter-spacing:.02em}
+.sum-btn:hover{background:rgba(167,139,255,0.2)}.sum-btn:disabled{opacity:.5;cursor:not-allowed}
+.sum-card{background:var(--s1);border:1px solid rgba(167,139,255,0.2);border-radius:var(--r3);overflow:hidden;margin-bottom:1rem;animation:res-in .35s ease}
+@keyframes res-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.sum-header{background:linear-gradient(135deg,rgba(167,139,255,0.12),rgba(167,139,255,0.03));padding:1.1rem 1.2rem;border-bottom:1px solid rgba(167,139,255,0.12)}
+.sum-rating-row{display:flex;align-items:center;gap:10px;margin-bottom:.6rem}
+.sum-emoji{font-size:30px}.sum-rating{font-family:var(--fh);font-size:18px;font-weight:800;color:var(--purple)}
+.sum-date{font-size:11px;color:var(--t3);margin-top:1px}
+.sum-text{font-size:13px;color:var(--t1);line-height:1.75}
+.sum-body{padding:1.1rem 1.2rem}
+.sum-section{margin-bottom:1rem}
+.sum-sec-title{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.55rem}
+.sum-cal-verdict{font-size:13px;color:var(--t2);line-height:1.6;padding:.7rem .85rem;background:var(--s2);border-radius:var(--r1);border-left:3px solid var(--amber)}
+.sum-chips{display:flex;flex-direction:column;gap:5px}
+.sum-chip{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:var(--t2);line-height:1.55}
+.sum-chip-dot{width:16px;height:16px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;margin-top:1px}
+.sum-chip-dot.good{background:var(--gd);color:var(--green)}.sum-chip-dot.bad{background:var(--rd);color:var(--red)}
+.sum-recs{display:flex;flex-direction:column;gap:6px}
+.sum-rec{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--t2);line-height:1.6;padding:.65rem .8rem;background:var(--s2);border-radius:var(--r1)}
+.sum-rec-num{font-family:var(--fh);font-size:11px;font-weight:700;color:var(--blue);flex-shrink:0;margin-top:1px}
+.sum-tomorrow{background:linear-gradient(135deg,var(--gd),rgba(90,232,122,0.02));border:1px solid var(--gb);border-radius:var(--r2);padding:.85rem 1rem;font-size:13px;color:var(--green);line-height:1.7;font-style:italic}
+.sum-tomorrow-lbl{font-size:10px;font-weight:700;color:var(--green);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;opacity:.7}
+
+/* ── ANALYZE PAGE ── */
+.ana-top{text-align:center;padding:1.25rem 0 1.1rem}
+.ana-top h2{font-family:var(--fh);font-size:19px;font-weight:700;margin-bottom:3px}
+.ana-top p{font-size:13px;color:var(--t2)}
+.mode-tabs{display:flex;gap:5px;margin-bottom:.9rem}
+.mtab{flex:1;padding:9px 5px;text-align:center;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r1);color:var(--t3);font-family:var(--fb);font-size:12px;font-weight:500;cursor:pointer;transition:all .18s}
+.mtab.on{background:var(--gd);border-color:var(--gb);color:var(--green)}
+.tbox{display:flex;align-items:center;gap:9px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r3);padding:.9rem 1.1rem;margin-bottom:.9rem;transition:border-color .2s}
+.tbox:focus-within{border-color:rgba(90,232,122,.3)}
+.tbox input{flex:1;background:transparent;border:none;outline:none;color:var(--t1);font-family:var(--fb);font-size:15px}
+.tbox input::placeholder{color:var(--t3)}.tbox-ic{font-size:16px;flex-shrink:0}
+.photo-drop{background:var(--s1);border:1px dashed var(--b2);border-radius:var(--r3);padding:2.2rem 1rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;display:none}
+.photo-drop.on{display:block}.photo-drop:hover{border-color:rgba(90,232,122,.3);background:var(--gd)}
+.photo-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-ic{font-size:30px;margin-bottom:7px}.photo-txt{font-size:13px;color:var(--t2)}.photo-sub{font-size:11px;color:var(--t3);margin-top:2px}
+#prev-img{width:100%;border-radius:var(--r2);max-height:200px;object-fit:cover;display:none;margin-bottom:.9rem;border:1px solid var(--b1)}
+
+/* Result */
+.res-wrap{animation:res-in .32s ease}
+.class-banner{border-radius:var(--r2);padding:.9rem 1rem;margin-bottom:.9rem;display:flex;align-items:center;gap:10px}
+.class-banner.GOOD{background:var(--gd);border:1px solid var(--gb)}
+.class-banner.BAD{background:var(--rd);border:1px solid var(--rb)}
+.class-icon{font-size:26px;flex-shrink:0}
+.class-badge{font-family:var(--fh);font-size:17px;font-weight:800;display:block}
+.class-banner.GOOD .class-badge{color:var(--green)}.class-banner.BAD .class-badge{color:var(--red)}
+.class-reason{font-size:12px;opacity:.75;line-height:1.5;margin-top:2px}
+.class-banner.GOOD .class-reason{color:var(--green)}.class-banner.BAD .class-reason{color:var(--red)}
+
+/* BAD food motivational warning card */
+.bad-warn-card{background:linear-gradient(135deg,rgba(255,91,91,0.13),rgba(255,91,91,0.04));border:2px solid rgba(255,91,91,0.35);border-radius:var(--r2);padding:1rem;margin-bottom:.9rem}
+.bad-warn-title{font-family:var(--fh);font-size:13px;font-weight:700;color:var(--red);margin-bottom:.5rem;display:flex;align-items:center;gap:6px}
+.bad-warn-txt{font-size:13px;color:rgba(255,200,200,0.9);line-height:1.75}
+.bad-warn-stop{margin-top:.75rem;padding:.6rem .85rem;background:rgba(255,91,91,0.12);border:1px solid rgba(255,91,91,0.25);border-radius:var(--r1);font-size:12px;color:var(--red);font-weight:600;text-align:center}
+
+.res-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r3);overflow:hidden;margin-bottom:.9rem}
+.res-bar{height:3px;background:var(--s3)}
+.res-bar-fill{height:100%;border-radius:99px;transition:width .9s ease}
+.res-body{padding:1.1rem}
+.res-name{font-family:var(--fh);font-size:19px;font-weight:700;margin-bottom:.85rem;display:flex;align-items:center;gap:8px}
+.res-score-row{display:flex;align-items:center;gap:11px;margin-bottom:1rem}
+.score-badge{width:56px;height:56px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--fh);font-size:20px;font-weight:800;flex-shrink:0}
+.score-badge small{font-size:8px;font-weight:400;opacity:.6;letter-spacing:.04em}
+.res-summary{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:.5rem}
+.res-cal-chip{display:inline-flex;align-items:center;gap:4px;background:var(--s2);border:1px solid var(--b1);border-radius:99px;padding:3px 9px;font-size:11px;font-weight:500;color:var(--amber)}
+.macros-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:1rem 1.1rem;border-top:1px solid var(--b1)}
+.mac{text-align:center}.mac-val{font-family:var(--fh);font-size:14px;font-weight:700}.mac-lbl{font-size:10px;color:var(--t3);margin-top:1px}
+.mac.p .mac-val{color:var(--blue)}.mac.c .mac-val{color:var(--amber)}.mac.f .mac-val{color:var(--red)}
+.ing-sec{padding:.9rem 1.1rem;border-top:1px solid var(--b1)}
+.ing-hd{font-size:10px;color:var(--t3);font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.8rem}
+.ing-row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--b1)}
+.ing-row:last-child{border-bottom:none;padding-bottom:0}
+.ing-sev{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.ing-sev.high{background:var(--rd)}.ing-sev.medium{background:var(--ad)}.ing-sev.low{background:var(--gd)}
+.ing-n{font-size:13px;font-weight:500;margin-bottom:1px}.ing-h{font-size:11px;color:var(--t2);line-height:1.5}
+.ing-b{font-size:10px;font-weight:600;padding:2px 6px;border-radius:99px;margin-left:auto;flex-shrink:0;align-self:center}
+.ing-b.high{background:var(--rd);color:var(--red)}.ing-b.medium{background:var(--ad);color:var(--amber)}.ing-b.low{background:var(--gd);color:var(--green)}
+.effects-sec{padding:.9rem 1.1rem;border-top:1px solid var(--b1)}
+.effect-item{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:var(--t2);line-height:1.5;padding:3px 0}
+.effect-dot{width:4px;height:4px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:5px}
+.alts-sec{margin-bottom:.9rem}
+.alts-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.alt-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:.85rem;text-align:center}
+.alt-em{font-size:20px;margin-bottom:3px}.alt-n{font-size:12px;font-weight:500}.alt-w{font-size:10px;color:var(--t3);margin-top:1px}.alt-cal{font-size:10px;color:var(--amber);font-weight:500;margin-top:2px}
+.motiv-box{background:linear-gradient(135deg,var(--pd),rgba(167,139,255,.03));border:1px solid rgba(167,139,255,.18);border-radius:var(--r2);padding:1rem;margin-bottom:.9rem}
+.motiv-lbl{font-size:10px;color:var(--purple);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+.motiv-txt{font-size:14px;color:var(--t1);line-height:1.7;font-style:italic}
+.action-row{display:flex;gap:8px;margin-bottom:1rem}.action-row .btn{flex:1;padding:12px}
+
+/* ── LOG PAGE ── */
+.log-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.log-hdr h2{font-family:var(--fh);font-size:18px;font-weight:700}
+.filters{display:flex;gap:4px}
+.ff{padding:5px 9px;border-radius:7px;border:1px solid var(--b1);background:var(--s2);color:var(--t3);font-size:11px;cursor:pointer;font-family:var(--fb);transition:all .18s}
+.ff.on{background:var(--gd);border-color:var(--gb);color:var(--green)}
+.log-sums{display:flex;gap:6px;margin-bottom:1rem}
+.ls{flex:1;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:.7rem;text-align:center}
+.ls-v{font-family:var(--fh);font-size:17px;font-weight:700}.ls-l{font-size:10px;color:var(--t3);margin-top:2px}
+.log-list{display:flex;flex-direction:column;gap:7px}
+.le{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:.9rem;display:flex;gap:10px;align-items:flex-start}
+.le-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.le-body{flex:1;min-width:0}
+.le-top{display:flex;align-items:center;gap:7px;margin-bottom:2px;flex-wrap:wrap}
+.le-name{font-size:14px;font-weight:500}.le-meta{font-size:11px;color:var(--t3);margin-bottom:6px}
+.le-bar{height:3px;background:var(--s3);border-radius:99px;overflow:hidden;margin-bottom:5px}
+.le-bar-fill{height:100%;border-radius:99px}.le-cal{font-size:11px;color:var(--amber);font-weight:500}
+.le-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.le-score{font-family:var(--fh);font-size:16px;font-weight:700}
+.del-btn{width:26px;height:26px;border-radius:7px;border:none;background:var(--rd);color:var(--red);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .18s}
+.del-btn:hover{opacity:.75}
+
+/* ── PROGRESS ── */
+.prog-h2{font-family:var(--fh);font-size:18px;font-weight:700;margin-bottom:1rem}
+.chart-wrap{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r3);padding:1.1rem;margin-bottom:1rem}
+.chart-title{font-size:11px;font-weight:600;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:1rem}
+.bar-row{display:flex;align-items:flex-end;gap:4px;height:80px}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bc-fill{width:100%;border-radius:4px 4px 0 0;min-height:3px;transition:height .7s ease}
+.bc-lbl{font-size:9px;color:var(--t3)}.bc-val{font-size:9px;font-weight:500}
+.cal-chart{display:flex;gap:4px;align-items:flex-end;height:70px}
+.cc{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.cc-fill{width:100%;border-radius:4px 4px 0 0;min-height:3px;background:var(--blue);opacity:.7;transition:height .7s ease}
+.cc-lbl{font-size:9px;color:var(--t3)}
+.bkd{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:1rem}
+.bk{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:.85rem}
+.bk-em{font-size:18px;margin-bottom:4px}.bk-v{font-family:var(--fh);font-size:19px;font-weight:700}.bk-l{font-size:10px;color:var(--t3);margin-top:1px}
+.ins-list{display:flex;flex-direction:column;gap:7px}
+.ins{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:.85rem;display:flex;gap:9px;align-items:flex-start}
+.ins-ic{font-size:15px;flex-shrink:0;margin-top:1px}.ins-txt{font-size:13px;color:var(--t2);line-height:1.65}
+.ins-txt strong{color:var(--t1);font-weight:500}
+
+/* ── HABIT TRACKER (Progress page) ── */
+.habit-section{margin-bottom:1rem}
+.habit-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r3);overflow:hidden;margin-bottom:.75rem}
+.habit-card-header{padding:.9rem 1rem;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:8px}
+.habit-card-icon{font-size:18px}
+.habit-card-title{font-family:var(--fh);font-size:13px;font-weight:700}
+.habit-card-sub{font-size:11px;color:var(--t3);margin-top:1px}
+.habit-food-list{padding:.75rem 1rem;display:flex;flex-direction:column;gap:.6rem}
+.habit-food-item{display:flex;align-items:center;gap:10px}
+.habit-food-emoji{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.habit-food-name{flex:1;font-size:13px;font-weight:500}
+.habit-food-meta{font-size:11px;color:var(--t3);margin-top:1px}
+.habit-times-pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;flex-shrink:0}
+.habit-times-pill.danger{background:var(--rd);color:var(--red);border:1px solid var(--rb)}
+.habit-times-pill.warn{background:var(--ad);color:var(--amber);border:1px solid var(--ab)}
+.habit-times-pill.good{background:var(--gd);color:var(--green);border:1px solid var(--gb)}
+.avoided-list{padding:.75rem 1rem;display:flex;flex-wrap:wrap;gap:6px}
+.avoided-chip{background:var(--gd);border:1px solid var(--gb);border-radius:99px;padding:4px 11px;font-size:11px;font-weight:600;color:var(--green);display:flex;align-items:center;gap:4px}
+
+/* clean streak big card */
+.clean-streak-card{background:linear-gradient(135deg,rgba(90,232,122,0.12),rgba(90,232,122,0.03));border:1px solid rgba(90,232,122,0.25);border-radius:var(--r3);padding:1.1rem;margin-bottom:1rem;text-align:center}
+.cs-number{font-family:var(--fh);font-size:52px;font-weight:800;color:var(--green);line-height:1}
+.cs-label{font-size:13px;color:rgba(90,232,122,0.75);margin-top:4px;margin-bottom:.6rem}
+.cs-msg{font-size:12px;color:var(--t2);line-height:1.6}
+
+/* ── PROFILE ── */
+.prof-top{text-align:center;padding:1.1rem 0 1rem}
+.av{width:64px;height:64px;border-radius:50%;background:var(--gd);border:2px solid var(--gb);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:22px;font-weight:700;color:var(--green);margin:0 auto 8px}
+.prof-name{font-family:var(--fh);font-size:18px;font-weight:700}.prof-since{font-size:11px;color:var(--t3);margin-top:2px}
+.achv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:1rem}
+.achv{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:.75rem 4px;text-align:center}
+.achv.on{border-color:rgba(255,173,59,.3);background:rgba(255,173,59,.05)}.achv.off{opacity:.28}
+.achv-ic{font-size:19px;margin-bottom:3px}.achv-n{font-size:10px;font-weight:500}.achv-d{font-size:9px;color:var(--t3);margin-top:1px}
+.pref-grp{margin-bottom:1rem}
+.pref-title{font-size:11px;color:var(--t3);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px}
+.pref-item{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);margin-bottom:5px}
+.pref-l{display:flex;align-items:center;gap:8px}.pref-ic{font-size:14px}.pref-n{font-size:13px;font-weight:500}.pref-s{font-size:11px;color:var(--t3)}
+.tog{width:38px;height:21px;border-radius:99px;border:none;background:var(--s3);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:15px;height:15px;border-radius:50%;background:var(--t3);transition:all .2s}
+.tog.on{background:var(--green)}.tog.on::after{left:20px;background:#06100A}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:8px 15px;font-size:12px;font-weight:500;opacity:0;transition:all .26s;z-index:400;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.green{border-color:var(--gb);color:var(--green)}.toast.red{border-color:var(--rb);color:var(--red)}.toast.amber{border-color:var(--ab);color:var(--amber)}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sp-mark">
+    <svg viewBox="0 0 34 34" fill="none">
+      <circle cx="17" cy="17" r="12" stroke="#5AE87A" stroke-width="1.6" stroke-dasharray="3 2"/>
+      <circle cx="12.5" cy="13.5" r="1.8" fill="#5AE87A"/><circle cx="21.5" cy="13.5" r="1.8" fill="#5AE87A"/>
+      <path d="M10.5 20 C10.5 24.5 23.5 24.5 23.5 20" stroke="#5AE87A" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+      <line x1="17" y1="26" x2="17" y2="30" stroke="#FF5B5B" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="14.5" y1="28" x2="19.5" y2="28" stroke="#FF5B5B" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <h1 class="sp-h1">Track every bite.<br>Own your <em>health</em>.</h1>
+  <p class="sp-sub">AI classifies food as GOOD or BAD, tracks calories, warns you of repeat bad habits, and celebrates your wins.</p>
+  <div class="sp-form">
+    <input class="sp-input" id="ob-name" type="text" placeholder="Your name" autocomplete="off"/>
+    <div class="sp-gl">Daily calorie target</div>
+    <input class="sp-input" id="ob-cal" type="number" placeholder="2000 kcal" value="2000" min="1000" max="5000"/>
+    <div class="sp-gl" style="margin-top:6px">My main goal</div>
+    <div class="sp-goals">
+      <button class="sp-g on" data-g="reduce">Reduce junk</button>
+      <button class="sp-g" data-g="quit">Quit completely</button>
+      <button class="sp-g" data-g="aware">Be more aware</button>
+      <button class="sp-g" data-g="weight">Lose weight</button>
+    </div>
+    <button class="sp-cta" onclick="onStart()">Start tracking →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-brand"><div class="tb-dot"></div>JunkStop AI</div>
+    <div class="api-pill"><div class="api-led" id="api-led"></div><span id="api-txt">connecting</span></div>
+  </div>
+
+  <div class="pages">
+
+    <!-- HOME -->
+    <div class="page on" id="pg-home">
+      <div class="hero">
+        <div class="hero-greet">Good <span id="tg"></span>,</div>
+        <div class="hero-name" id="hero-name">Friend</div>
+        <div class="ring-row">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 66 66"><circle class="ring-bg" cx="33" cy="33" r="28"/><circle class="ring-fg" id="ring-fg" cx="33" cy="33" r="28"/></svg>
+            <div class="ring-num"><span id="ring-n">0</span><small>SCORE</small></div>
+          </div>
+          <div class="ring-meta"><h3 id="score-lbl">No data yet</h3><p id="score-desc">Analyze your first food to begin.</p></div>
+        </div>
+      </div>
+
+      <div id="streak-banner-area"></div>
+
+      <div class="cal-bar-wrap">
+        <div class="cal-bar-header">
+          <span class="cal-bar-title">Today's Calories</span>
+          <span class="cal-bar-val" id="cal-display">0 / <span id="cal-target-disp">2000</span> kcal</span>
+        </div>
+        <div class="cal-track"><div class="cal-track-fill" id="cal-fill" style="width:0%"></div></div>
+        <div class="cal-breakdown">
+          <div class="cal-macro"><div class="cal-macro-val" id="m-protein" style="color:var(--blue)">0g</div><div class="cal-macro-lbl">Protein</div></div>
+          <div class="cal-macro"><div class="cal-macro-val" id="m-carbs" style="color:var(--amber)">0g</div><div class="cal-macro-lbl">Carbs</div></div>
+          <div class="cal-macro"><div class="cal-macro-val" id="m-fat" style="color:var(--red)">0g</div><div class="cal-macro-lbl">Fat</div></div>
+          <div class="cal-macro"><div class="cal-macro-val" id="m-fiber" style="color:var(--green)">0g</div><div class="cal-macro-lbl">Fiber</div></div>
+        </div>
+      </div>
+
+      <div class="gb-split">
+        <div class="gb-tile good-tile"><div class="gb-count" id="gb-good">0</div><div class="gb-lbl">✓ GOOD today</div></div>
+        <div class="gb-tile bad-tile"><div class="gb-count" id="gb-bad">0</div><div class="gb-lbl">✕ BAD today</div></div>
+      </div>
+
+      <div class="stats-row">
+        <div class="st green"><div class="st-lbl">Health score</div><div class="st-val" id="s-streak">0</div><div class="st-sub">out of 100</div></div>
+        <div class="st amber"><div class="st-lbl">Junk this week</div><div class="st-val" id="s-junk">0</div><div class="st-sub">meals</div></div>
+        <div class="st blue"><div class="st-lbl">Week calories</div><div class="st-val" id="s-wcal">—</div><div class="st-sub">kcal total</div></div>
+        <div class="st red"><div class="st-lbl">Avg junk score</div><div class="st-val" id="s-worst">—</div><div class="st-sub">all time</div></div>
+      </div>
+
+      <div class="coach"><div class="coach-lbl">AI Coach</div><div class="coach-txt" id="coach-txt">Log your first meal to unlock personalized coaching.</div></div>
+
+      <div class="slabel" style="margin-bottom:.75rem">Today's meals</div>
+      <div class="recent-list" id="recent-list">
+        <div class="empty"><div class="empty-ic">🍽️</div><div class="empty-t">Nothing logged today</div><div class="empty-s">Tap Analyze to scan your first food</div></div>
+      </div>
+
+      <div style="margin-top:1.1rem">
+        <div class="slabel" style="margin-bottom:.6rem">AI Daily Summary</div>
+        <button class="sum-btn" id="sum-btn" onclick="loadDailySummary()">✨ Generate today's AI summary & recommendations</button>
+        <div id="sum-area"></div>
+      </div>
+    </div>
+
+    <!-- ANALYZE -->
+    <div class="page" id="pg-analyze">
+      <div class="ana-top"><h2>Analyze Food</h2><p>Type a name or upload a photo — AI classifies GOOD or BAD</p></div>
+      <div class="mode-tabs">
+        <button class="mtab on" onclick="setMode('text',this)">📝 Type name</button>
+        <button class="mtab" onclick="setMode('photo',this)">📸 Upload photo</button>
+      </div>
+      <div class="tbox" id="tbox">
+        <span class="tbox-ic">🔍</span>
+        <input id="food-input" type="text" placeholder="e.g. samosa, salad, burger, dal rice…" autocomplete="off"/>
+      </div>
+      <div class="photo-drop" id="photo-drop">
+        <div class="photo-ic">📸</div>
+        <div class="photo-txt">Tap to upload a food photo</div>
+        <div class="photo-sub">Groq Vision AI identifies & classifies instantly</div>
+        <input type="file" accept="image/*" id="photo-file" onchange="onPhoto(event)"/>
+      </div>
+      <img id="prev-img" alt="food"/>
+      <button class="btn btn-green" id="ana-btn" onclick="doAnalyze()" style="margin-bottom:.9rem">Analyze with AI ↗</button>
+      <div id="result-area"></div>
+    </div>
+
+    <!-- LOG -->
+    <div class="page" id="pg-log">
+      <div class="log-hdr">
+        <h2>Food Log</h2>
+        <div class="filters">
+          <button class="ff on" onclick="setFilter('today',this)">Today</button>
+          <button class="ff" onclick="setFilter('week',this)">Week</button>
+          <button class="ff" onclick="setFilter('all',this)">All</button>
+        </div>
+      </div>
+      <div class="log-sums" id="log-sums"></div>
+      <div class="log-list" id="log-list"></div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="page" id="pg-progress">
+      <div class="prog-h2">Progress & Habits</div>
+
+      <!-- Clean streak -->
+      <div class="clean-streak-card">
+        <div class="cs-number" id="cs-num">0</div>
+        <div class="cs-label">clean days streak (no bad food)</div>
+        <div class="cs-msg" id="cs-msg">Start logging to track your clean streak!</div>
+      </div>
+
+      <!-- Weekly habit tracker -->
+      <div class="habit-section">
+        <div class="slabel" style="margin-bottom:.75rem">🚫 Foods to stop — repeated this week</div>
+        <div id="repeat-bad-area">
+          <div class="empty" style="padding:1.5rem"><div class="empty-ic">✅</div><div class="empty-t">No repeated bad foods</div><div class="empty-s">Great job this week!</div></div>
+        </div>
+      </div>
+
+      <div class="habit-section">
+        <div class="slabel" style="margin-bottom:.75rem">✅ Successfully avoided this week</div>
+        <div id="avoided-area">
+          <div class="empty" style="padding:1.5rem"><div class="empty-ic">📊</div><div class="empty-t">Keep logging to track avoidances</div></div>
+        </div>
+      </div>
+
+      <div class="habit-section">
+        <div class="slabel" style="margin-bottom:.75rem">💚 Good foods you keep eating</div>
+        <div id="good-habits-area">
+          <div class="empty" style="padding:1.5rem"><div class="empty-ic">🥗</div><div class="empty-t">Log healthy meals to see your good habits</div></div>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-title">Weekly avg junk score</div>
+        <div class="bar-row" id="junk-chart"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Daily calories (7 days)</div>
+        <div class="cal-chart" id="cal-chart"></div>
+      </div>
+      <div class="bkd" id="bkd"></div>
+      <div class="slabel" style="margin-bottom:.75rem">AI Insights</div>
+      <div class="ins-list" id="ins-list"></div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="page" id="pg-profile">
+      <div class="prof-top">
+        <div class="av" id="av">?</div>
+        <div class="prof-name" id="prof-name">—</div>
+        <div class="prof-since" id="prof-since">Member since today</div>
+      </div>
+      <div class="slabel" style="margin-bottom:.75rem">Achievements</div>
+      <div class="achv-grid" id="achv-grid"></div>
+      <div class="pref-grp">
+        <div class="pref-title">Preferences</div>
+        <div class="pref-item"><div class="pref-l"><span class="pref-ic">🔔</span><div><div class="pref-n">Reminders</div><div class="pref-s">Daily log nudge</div></div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+        <div class="pref-item"><div class="pref-l"><span class="pref-ic">🎯</span><div><div class="pref-n">Strict mode</div><div class="pref-s">Harsher junk feedback</div></div></div><button class="tog" onclick="this.classList.toggle('on')"></button></div>
+      </div>
+      <div class="pref-grp">
+        <div class="pref-title">Goal & Target</div>
+        <div class="pref-item"><div class="pref-l"><span class="pref-ic">🏆</span><div><div class="pref-n" id="goal-disp">Reduce junk food</div><div class="pref-s">Your goal</div></div></div></div>
+        <div class="pref-item"><div class="pref-l"><span class="pref-ic">🔥</span><div><div class="pref-n"><span id="cal-target-prof">2000</span> kcal/day</div><div class="pref-s">Daily calorie target</div></div></div></div>
+        <div class="pref-item"><div class="pref-l"><span class="pref-ic">🖥️</span><div><div class="pref-n">Backend</div><div class="pref-s" id="api-url-disp">localhost:5000</div></div></div></div>
+      </div>
+      <button class="btn btn-red" style="margin-bottom:2rem" onclick="resetApp()">Reset all data</button>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="ni on" onclick="goPage('home',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span class="ni-lbl">Home</span>
+    </button>
+    <button class="ni" onclick="goPage('analyze',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      <span class="ni-lbl">Analyze</span>
+    </button>
+    <button class="ni" onclick="goPage('log',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span class="ni-lbl">Log</span>
+    </button>
+    <button class="ni" onclick="goPage('progress',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="ni-lbl">Progress</span>
+    </button>
+    <button class="ni" onclick="goPage('profile',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="ni-lbl">Profile</span>
+    </button>
+  </nav>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Save to your food log?</div>
+    <div class="modal-sub" id="modal-sub">This will be tracked in your daily calorie and health dashboard.</div>
+    <!-- REPEAT WARNING (shown only for repeated BAD foods) -->
+    <div class="repeat-warn" id="repeat-warn" style="display:none">
+      <div class="repeat-warn-head">
+        <span class="repeat-warn-ic">🚨</span>
+        <span class="repeat-warn-title">Repeat offender!</span>
+        <span class="repeat-warn-count" id="repeat-count-pill">2x this week</span>
+      </div>
+      <div class="repeat-warn-txt" id="repeat-warn-txt"></div>
+    </div>
+    <div class="confirm-food-row" id="modal-food-row"></div>
+    <div class="slabel" style="margin-bottom:.6rem">Meal type</div>
+    <div class="meal-type-row">
+      <button class="mtype" data-m="breakfast">🌅 Breakfast</button>
+      <button class="mtype on" data-m="lunch">☀️ Lunch</button>
+      <button class="mtype" data-m="dinner">🌙 Dinner</button>
+      <button class="mtype" data-m="snack">🍿 Snack</button>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-green" id="confirm-save-btn" onclick="confirmSave()">Yes, save it ✓</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://localhost:5000';
+
+function fmtTime(s) {
+  if (!s) return '';
+  const hasOff = s.includes('+') || (s.split('T')[1]||'').includes('-') || s.endsWith('Z');
+  const d = hasOff ? new Date(s) : new Date(s.replace('T',' '));
+  return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+function fmtDateTime(s) {
+  if (!s) return '';
+  const hasOff = s.includes('+') || (s.split('T')[1]||'').includes('-') || s.endsWith('Z');
+  const d = hasOff ? new Date(s) : new Date(s.replace('T',' '));
+  return d.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+}
+
+let CFG = { user:'', goal:'reduce', calTarget:2000, joinDate:'' };
+let pendingResult = null;
+let repeatData = null;
+let selectedMealType = 'lunch';
+
+function saveC() { localStorage.setItem('js_cfg_v5', JSON.stringify(CFG)); }
+function loadC() { const d = localStorage.getItem('js_cfg_v5'); if(d){CFG=JSON.parse(d);return true;}return false; }
+
+// ── SPLASH ──
+document.querySelectorAll('.sp-g').forEach(b => {
+  b.onclick = () => { document.querySelectorAll('.sp-g').forEach(x=>x.classList.remove('on')); b.classList.add('on'); CFG.goal=b.dataset.g; };
+});
+function onStart() {
+  CFG.user      = document.getElementById('ob-name').value.trim() || 'Friend';
+  CFG.calTarget = parseInt(document.getElementById('ob-cal').value) || 2000;
+  CFG.joinDate  = new Date().toLocaleDateString();
+  saveC();
+  document.getElementById('splash').classList.add('out');
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('app').classList.add('on');
+    initApp();
+  }, 460);
+}
+
+// ── INIT ──
+function initApp() {
+  const n = CFG.user || 'Friend';
+  const h = new Date().getHours();
+  document.getElementById('tg').textContent          = h<12?'morning':h<17?'afternoon':'evening';
+  document.getElementById('hero-name').textContent   = n;
+  document.getElementById('prof-name').textContent   = n;
+  document.getElementById('prof-since').textContent  = 'Member since ' + CFG.joinDate;
+  document.getElementById('av').textContent          = n[0].toUpperCase();
+  document.getElementById('cal-target-disp').textContent = CFG.calTarget;
+  document.getElementById('cal-target-prof').textContent = CFG.calTarget;
+  document.getElementById('goal-disp').textContent   = {reduce:'Reduce junk food',quit:'Quit completely',aware:'Be more aware',weight:'Lose weight'}[CFG.goal] || 'Reduce junk food';
+  document.getElementById('api-url-disp').textContent = API;
+  checkApi();
+  loadHome();
+}
+
+async function checkApi() {
+  try {
+    const d = await fetch(API+'/api/health').then(r=>r.json());
+    document.getElementById('api-led').className = 'api-led ok';
+    document.getElementById('api-txt').textContent = d.model || 'groq';
+  } catch {
+    document.getElementById('api-led').className = 'api-led err';
+    document.getElementById('api-txt').textContent = 'offline';
+  }
+}
+
+// ── HOME ──
+async function loadHome() {
+  try {
+    const [today, stats, habits] = await Promise.all([
+      fetch(API+'/api/log/today?user_id='+CFG.user).then(r=>r.json()),
+      fetch(API+'/api/stats/summary?user_id='+CFG.user).then(r=>r.json()),
+      fetch(API+'/api/bad-habits?user_id='+CFG.user).then(r=>r.json()),
+    ]);
+    renderHome(today, stats, habits);
+    loadCoach(today);
+  } catch { renderHomeOffline(); }
+}
+
+function renderHome(today, stats, habits) {
+  const calAvg = today.totals.calories_avg || 0;
+  const pct    = Math.min(100, Math.round(calAvg / CFG.calTarget * 100));
+  document.getElementById('cal-display').innerHTML = `${calAvg} / <span id="cal-target-disp">${CFG.calTarget}</span> kcal`;
+  const fill = document.getElementById('cal-fill');
+  fill.style.width = pct + '%';
+  fill.className = 'cal-track-fill' + (pct > 100 ? ' over' : '');
+  document.getElementById('m-protein').textContent = today.totals.protein_g + 'g';
+  document.getElementById('m-carbs').textContent   = today.totals.carbs_g + 'g';
+  document.getElementById('m-fat').textContent     = today.totals.fat_g + 'g';
+  document.getElementById('m-fiber').textContent   = (today.totals.fiber_g||0) + 'g';
+  document.getElementById('gb-good').textContent   = today.totals.good_count;
+  document.getElementById('gb-bad').textContent    = today.totals.junk_count;
+  document.getElementById('s-streak').textContent  = stats.health_score;
+  document.getElementById('s-junk').textContent    = stats.bad_count || 0;
+  document.getElementById('s-wcal').textContent    = stats.week_calories > 0 ? Math.round(stats.week_calories/1000)+'k' : '—';
+  document.getElementById('s-worst').textContent   = stats.avg_junk_score > 0 ? Math.round(stats.avg_junk_score) : '—';
+
+  // health ring
+  const hs   = stats.health_score || 0;
+  const ring = document.getElementById('ring-fg');
+  const circ = 2 * Math.PI * 28;
+  ring.style.strokeDasharray = circ;
+  setTimeout(() => {
+    ring.style.strokeDashoffset = circ - (circ * hs / 100);
+    document.getElementById('ring-n').textContent = hs;
+    if (hs>=70) { ring.style.stroke='var(--green)'; document.getElementById('score-lbl').textContent='Excellent!'; document.getElementById('score-desc').textContent='Your diet is looking really healthy!'; }
+    else if (hs>=50) { ring.style.stroke='var(--amber)'; document.getElementById('score-lbl').textContent='Room to improve'; document.getElementById('score-desc').textContent='Some junk in your diet — keep reducing!'; }
+    else { ring.style.stroke='var(--red)'; document.getElementById('score-lbl').textContent='High junk intake'; document.getElementById('score-desc').textContent='Your diet needs attention — check habits below.'; }
+  }, 300);
+
+  // streak celebration banner
+  const sb = document.getElementById('streak-banner-area');
+  const cd = habits.clean_streak_days || 0;
+  if (cd >= 1) {
+    const msgs = {1:'One full day without junk — the streak begins!',2:'Two clean days! Your body is already thanking you.',3:'3-day streak! Inflammation is reducing right now.',5:'5 days clean — you are officially building a new habit!',7:'One full clean week! This is incredible progress. 🏆'};
+    const msg  = msgs[cd] || `${cd} days without junk food — remarkable willpower!`;
+    sb.innerHTML = `<div class="streak-banner"><span class="streak-banner-ic">🔥</span><div><div class="streak-banner-title">${cd}-Day Clean Streak!</div><div class="streak-banner-sub">${msg}</div></div></div>`;
+  } else { sb.innerHTML = ''; }
+
+  renderRecentList(today.entries);
+}
+
+function renderHomeOffline() {
+  document.getElementById('recent-list').innerHTML = '<div class="empty"><div class="empty-ic">🔌</div><div class="empty-t">Backend offline</div><div class="empty-s">Start your Flask server at localhost:5000</div></div>';
+}
+
+function renderRecentList(entries) {
+  const wrap = document.getElementById('recent-list');
+  if (!entries || !entries.length) {
+    wrap.innerHTML = '<div class="empty"><div class="empty-ic">🍽️</div><div class="empty-t">Nothing logged today</div><div class="empty-s">Tap Analyze to scan your first food</div></div>';
+    return;
+  }
+  wrap.innerHTML = entries.slice(0,6).map(e => {
+    const isBad  = e.classification === 'BAD';
+    const bg     = isBad ? 'var(--rd)' : 'var(--gd)';
+    const calStr = e.calories_min > 0 ? Math.round((e.calories_min+e.calories_max)/2)+' kcal' : '';
+    return `<div class="ri">
+      <div class="ri-ic" style="background:${bg}">${e.emoji||'🍽️'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="ri-food">${e.food_name}</div>
+        <div class="ri-meta">${fmtTime(e.logged_at)} · ${e.meal_type}</div>
+      </div>
+      <div class="ri-right">
+        <span class="tag ${isBad?'bad':'good'}">${isBad?'✕ BAD':'✓ GOOD'}</span>
+        ${calStr?`<span class="ri-cal">${calStr}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadCoach(today) {
+  try {
+    const junk = today ? today.totals.junk_count : 0;
+    const d = await fetch(API+'/api/motivate', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({junk_count:junk,goal:CFG.goal})}).then(r=>r.json());
+    if (d.motivation) document.getElementById('coach-txt').textContent = d.motivation;
+  } catch {}
+}
+
+// ── ANALYZE ──
+let inputMode = 'text', photoFile = null;
+
+function setMode(m, el) {
+  inputMode = m;
+  document.querySelectorAll('.mtab').forEach((t,i) => t.classList.toggle('on', ['text','photo'][i]===m));
+  document.getElementById('tbox').style.display       = m==='text' ? 'flex' : 'none';
+  document.getElementById('photo-drop').style.display = m==='photo' ? 'block' : 'none';
+  if (m==='text') { document.getElementById('prev-img').style.display='none'; photoFile=null; }
+}
+
+function onPhoto(e) {
+  photoFile = e.target.files[0];
+  if (!photoFile) return;
+  const img = document.getElementById('prev-img');
+  img.src = URL.createObjectURL(photoFile);
+  img.style.display = 'block';
+  document.getElementById('photo-drop').style.display = 'none';
+}
+
+async function doAnalyze() {
+  const txt = document.getElementById('food-input').value.trim();
+  if (inputMode==='text' && !txt) { showToast('Enter a food name first','amber'); return; }
+  if (inputMode==='photo' && !photoFile) { showToast('Upload a photo first','amber'); return; }
+
+  const btn = document.getElementById('ana-btn');
+  btn.disabled = true;
+  btn.textContent = inputMode==='photo' ? 'Vision AI scanning…' : 'Analyzing with Groq…';
+  document.getElementById('result-area').innerHTML = `<div class="loading"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div><p style="text-align:center;font-size:12px;color:var(--t3);margin-top:-.4rem">${inputMode==='photo'?'Groq Vision identifying food…':'AI analyzing ingredients & nutrition…'}</p>`;
+
+  try {
+    let result;
+    if (inputMode==='photo') {
+      const fd = new FormData(); fd.append('image', photoFile);
+      const r = await fetch(API+'/api/analyze/image', {method:'POST', body:fd});
+      if (!r.ok) { const e=await r.json(); throw new Error(e.error||'Server error'); }
+      result = await r.json();
+    } else {
+      const r = await fetch(API+'/api/analyze/text', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({food:txt})});
+      if (!r.ok) { const e=await r.json(); throw new Error(e.error||'Server error'); }
+      result = await r.json();
+    }
+    if (result.error) throw new Error(result.error);
+    pendingResult = result;
+    renderResult(result);
+  } catch(err) {
+    document.getElementById('result-area').innerHTML = `<div style="background:var(--rd);border:1px solid var(--rb);border-radius:var(--r2);padding:1rem;font-size:13px;color:var(--red);line-height:1.6"><strong style="display:block;margin-bottom:3px">Analysis failed</strong>${err.message}<br><br>Make sure Flask backend is running at <code>${API}</code></div>`;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Analyze with AI ↗';
+}
+
+function renderResult(r) {
+  const score  = r.junkScore || 0;
+  const isBad  = r.classification === 'BAD';
+  const color  = score>=70?'var(--red)':score>=45?'var(--amber)':'var(--green)';
+  const dim    = score>=70?'var(--rd)':score>=45?'var(--ad)':'var(--gd)';
+  const cal    = r.calories || {};
+  const macros = r.macros || {};
+  const calStr = cal.min && cal.max ? `${cal.min}–${cal.max} kcal` : '';
+  const serv   = cal.serving_size || 'per serving';
+
+  // Build BAD food motivational warning
+  const badWarnHtml = isBad ? `
+    <div class="bad-warn-card">
+      <div class="bad-warn-title">⛔ Don't eat this food</div>
+      <div class="bad-warn-txt">${r.motivation || 'This food is harmful to your health goals. Every time you choose better, you win.'}</div>
+      <div class="bad-warn-stop">💪 Make a different choice — your future self will thank you</div>
+    </div>` : '';
+
+  const ingHtml = (r.ingredients||[]).length
+    ? (r.ingredients||[]).map(ing => `<div class="ing-row">
+        <div class="ing-sev ${ing.severity}">${ing.severity==='high'?'⚠':ing.severity==='medium'?'!':'✓'}</div>
+        <div style="flex:1"><div class="ing-n">${ing.name}</div><div class="ing-h">${ing.harm}</div></div>
+        <span class="ing-b ${ing.severity}">${ing.severity}</span>
+      </div>`).join('')
+    : '<div style="padding:5px 0;font-size:12px;color:var(--t3)">No harmful ingredients — looks clean!</div>';
+
+  const effectsHtml = (r.health_effects||[]).length
+    ? `<div class="effects-sec"><div class="ing-hd">Health effects</div>${(r.health_effects||[]).map(e=>`<div class="effect-item"><div class="effect-dot"></div>${e}</div>`).join('')}</div>` : '';
+
+  const altsHtml = (r.alternatives||[]).length
+    ? `<div class="alts-sec"><div class="slabel" style="margin-bottom:.6rem">Healthier alternatives</div>
+        <div class="alts-grid">${(r.alternatives||[]).map(a=>`<div class="alt-card"><div class="alt-em">${a.emoji}</div><div class="alt-n">${a.name}</div><div class="alt-w">${a.why}</div>${a.calories?`<div class="alt-cal">${a.calories}</div>`:''}</div>`).join('')}</div></div>` : '';
+
+  const macroHtml = macros.protein_g != null
+    ? `<div class="macros-grid">
+        <div class="mac p"><div class="mac-val">${macros.protein_g}g</div><div class="mac-lbl">Protein</div></div>
+        <div class="mac c"><div class="mac-val">${macros.carbs_g}g</div><div class="mac-lbl">Carbs</div></div>
+        <div class="mac f"><div class="mac-val">${macros.fat_g}g</div><div class="mac-lbl">Fat</div></div>
+        <div class="mac"><div class="mac-val" style="color:var(--green)">${macros.fiber_g||0}g</div><div class="mac-lbl">Fiber</div></div>
+        <div class="mac"><div class="mac-val" style="color:var(--purple)">${macros.sugar_g||0}g</div><div class="mac-lbl">Sugar</div></div>
+        <div class="mac"><div class="mac-val" style="color:var(--t2)">${macros.sodium_mg||0}mg</div><div class="mac-lbl">Sodium</div></div>
+      </div>` : '';
+
+  // For GOOD food still show motivational box (positive)
+  const motivHtml = !isBad ? `<div class="motiv-box"><div class="motiv-lbl">AI Coach says</div><div class="motiv-txt">"${r.motivation||''}"</div></div>` : '';
+
+  document.getElementById('result-area').innerHTML = `<div class="res-wrap">
+    <div class="class-banner ${r.classification||'BAD'}">
+      <div class="class-icon">${isBad?'🚫':'✅'}</div>
+      <div>
+        <span class="class-badge">${isBad?'BAD FOOD':'GOOD FOOD'}</span>
+        <div class="class-reason">${r.classificationReason||r.summary||''}</div>
+      </div>
+    </div>
+
+    ${badWarnHtml}
+
+    <div class="res-card">
+      <div class="res-bar"><div class="res-bar-fill" id="res-fill" style="width:0%;background:${color}"></div></div>
+      <div class="res-body">
+        <div class="res-name">${r.emoji||'🍽️'} ${r.foodName}</div>
+        <div class="res-score-row">
+          <div class="score-badge" style="background:${dim};color:${color}">${score}<small>/100</small></div>
+          <div>
+            <div style="font-family:var(--fh);font-size:13px;font-weight:600;color:${color};margin-bottom:2px">${r.category}</div>
+            <div class="res-summary">${r.summary||''}</div>
+            ${calStr?`<span class="res-cal-chip">🔥 ${calStr} &nbsp;·&nbsp; ${serv}</span>`:''}
+          </div>
+        </div>
+      </div>
+      ${macroHtml}
+      <div class="ing-sec"><div class="ing-hd">Ingredient analysis</div>${ingHtml}</div>
+      ${effectsHtml}
+    </div>
+
+    ${altsHtml}
+    ${motivHtml}
+
+    <div class="action-row">
+      <button class="btn btn-outline" onclick="closeAndDiscard()">Discard</button>
+      <button class="btn btn-green" onclick="openSaveModal()">Save to log ✓</button>
+    </div>
+  </div>`;
+
+  setTimeout(() => { const f=document.getElementById('res-fill'); if(f) f.style.width=score+'%'; }, 80);
+}
+
+function closeAndDiscard() { document.getElementById('result-area').innerHTML=''; pendingResult=null; }
+
+// ── SAVE MODAL with repeat check ──
+async function openSaveModal() {
+  if (!pendingResult) { showToast('Analyze a food first','amber'); return; }
+  const r = pendingResult;
+
+  // Reset modal first
+  document.getElementById('repeat-warn').style.display = 'none';
+  repeatData = null;
+
+  const isBad  = r.classification === 'BAD';
+  const cal    = r.calories || {};
+  const calStr = cal.min&&cal.max ? `~${Math.round((cal.min+cal.max)/2)} kcal` : '';
+
+  document.getElementById('modal-sub').textContent = isBad
+    ? 'Tracking even bad foods helps you stay aware of your habits.'
+    : 'Great choice! This GOOD food will be tracked in your nutrition dashboard.';
+
+  const bg = isBad ? 'var(--rd)' : 'var(--gd)';
+  document.getElementById('modal-food-row').innerHTML = `
+    <div class="confirm-emoji" style="background:${bg}">${r.emoji||'🍽️'}</div>
+    <div>
+      <div class="confirm-name">${r.foodName}</div>
+      <div class="confirm-cal">${calStr} · Junk score: ${r.junkScore}/100</div>
+    </div>
+    <span class="tag ${isBad?'bad':'good'}" style="margin-left:auto">${isBad?'BAD':'GOOD'}</span>`;
+
+  document.querySelectorAll('.mtype').forEach(b => {
+    b.classList.toggle('on', b.dataset.m==='lunch');
+    b.onclick = () => { document.querySelectorAll('.mtype').forEach(x=>x.classList.remove('on')); b.classList.add('on'); selectedMealType=b.dataset.m; };
+  });
+  selectedMealType = 'lunch';
+  document.getElementById('modal').classList.add('on');
+
+  // Check if repeat bad food
+  if (isBad) {
+    try {
+      const chk = await fetch(API+'/api/check-repeat', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({user_id:CFG.user, food_name:r.foodName, classification:'BAD'})
+      }).then(x=>x.json());
+
+      if (chk.repeat && chk.count > 0) {
+        repeatData = chk;
+        document.getElementById('repeat-count-pill').textContent = chk.count+'x this week';
+        document.getElementById('repeat-warn-txt').textContent = chk.warning || '';
+        document.getElementById('repeat-warn').style.display = 'block';
+        // Change save button to orange warning
+        const saveBtn = document.getElementById('confirm-save-btn');
+        saveBtn.style.background = 'var(--amber)';
+        saveBtn.style.color = '#06100A';
+        saveBtn.textContent = 'Log it anyway';
+      }
+    } catch {}
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('on');
+  // Reset save button
+  const btn = document.getElementById('confirm-save-btn');
+  btn.style.background = '';
+  btn.style.color = '';
+  btn.textContent = 'Yes, save it ✓';
+}
+
+async function confirmSave() {
+  if (!pendingResult) return;
+  const r   = pendingResult;
+  const btn = document.getElementById('confirm-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    const payload = {
+      user_id: CFG.user,
+      food_name: r.foodName, emoji: r.emoji||'🍽️',
+      junk_score: r.junkScore, category: r.category, classification: r.classification,
+      calories: r.calories, macros: r.macros||{},
+      ingredients: r.ingredients||[], health_effects: r.health_effects||[],
+      alternatives: r.alternatives||[],
+      summary: r.summary||'', motivation: r.motivation||'',
+      meal_type: selectedMealType,
+    };
+    const res = await fetch(API+'/api/log', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if (!res.ok) { const e=await res.json(); throw new Error(e.error||'Failed'); }
+
+    closeModal();
+    showToast(r.classification==='BAD' ? '⚠️ BAD food logged' : '✅ GOOD food logged!', r.classification==='BAD'?'red':'green');
+    pendingResult = null;
+    document.getElementById('result-area').innerHTML = '';
+    document.getElementById('food-input').value = '';
+    loadHome();
+  } catch(err) {
+    showToast('Save failed: '+err.message, 'red');
+    btn.disabled = false; btn.textContent = 'Yes, save it ✓';
+  }
+}
+
+// ── LOG PAGE ──
+let logFilter = 'today';
+function setFilter(f, el) {
+  logFilter = f;
+  document.querySelectorAll('.ff').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  renderLog();
+}
+
+async function renderLog() {
+  try {
+    let url = logFilter==='today'
+      ? API+'/api/log/today?user_id='+CFG.user
+      : API+'/api/log/all?user_id='+CFG.user+'&limit='+(logFilter==='week'?70:200);
+
+    const d = await fetch(url).then(r=>r.json());
+    let entries=[], totals={};
+    if (logFilter==='today') {
+      entries=d.entries||[]; totals=d.totals||{};
+    } else {
+      entries=d.entries||[];
+      if (logFilter==='week') {
+        const cut=new Date(); cut.setDate(cut.getDate()-7);
+        entries=entries.filter(e=>new Date(e.logged_at)>=cut);
+      }
+      totals={
+        meal_count:entries.length,
+        calories_avg:Math.round(entries.reduce((a,b)=>a+(b.calories_min+b.calories_max)/2,0)),
+        good_count:entries.filter(e=>e.classification==='GOOD').length,
+        junk_count:entries.filter(e=>e.classification==='BAD').length,
+      };
+    }
+
+    const bc = s => s>=70?'var(--red)':s>=45?'var(--amber)':'var(--green)';
+    document.getElementById('log-sums').innerHTML = `
+      <div class="ls"><div class="ls-v" style="color:var(--green)">${totals.good_count||0}</div><div class="ls-l">Good</div></div>
+      <div class="ls"><div class="ls-v" style="color:var(--red)">${totals.junk_count||0}</div><div class="ls-l">Bad</div></div>
+      <div class="ls"><div class="ls-v">${totals.meal_count||entries.length}</div><div class="ls-l">Meals</div></div>
+      <div class="ls"><div class="ls-v" style="color:var(--amber)">${totals.calories_avg||0}</div><div class="ls-l">kcal</div></div>`;
+
+    if (!entries.length) {
+      document.getElementById('log-list').innerHTML='<div class="empty"><div class="empty-ic">📋</div><div class="empty-t">Nothing logged</div><div class="empty-s">Analyze food to track your meals</div></div>';
+      return;
+    }
+    document.getElementById('log-list').innerHTML = entries.map(e => {
+      const isBad = e.classification==='BAD';
+      const cal   = e.calories_min>0 ? Math.round((e.calories_min+e.calories_max)/2)+' kcal' : '';
+      return `<div class="le">
+        <div class="le-ic" style="background:${isBad?'var(--rd)':'var(--gd)'}">${e.emoji||'🍽️'}</div>
+        <div class="le-body">
+          <div class="le-top"><span class="le-name">${e.food_name}</span><span class="tag ${isBad?'bad':'good'}">${isBad?'BAD':'GOOD'}</span></div>
+          <div class="le-meta">${fmtDateTime(e.logged_at)} · ${e.meal_type}</div>
+          <div class="le-bar"><div class="le-bar-fill" style="width:${e.junk_score}%;background:${bc(e.junk_score)}"></div></div>
+          ${cal?`<div class="le-cal">🔥 ${cal}</div>`:''}
+        </div>
+        <div class="le-right">
+          <span class="le-score" style="color:${bc(e.junk_score)}">${e.junk_score}</span>
+          <button class="del-btn" onclick="deleteEntry(${e.id})">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch {
+    document.getElementById('log-list').innerHTML='<div class="empty"><div class="empty-ic">🔌</div><div class="empty-t">Backend offline</div></div>';
+  }
+}
+
+async function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  try {
+    await fetch(API+'/api/log/'+id, {method:'DELETE'});
+    showToast('Entry deleted','amber');
+    renderLog(); loadHome();
+  } catch { showToast('Delete failed','red'); }
+}
+
+// ── PROGRESS ──
+async function renderProgress() {
+  try {
+    const [histRes, statsRes, todayRes, habitsRes] = await Promise.all([
+      fetch(API+'/api/log/history?user_id='+CFG.user+'&days=7').then(r=>r.json()),
+      fetch(API+'/api/stats/summary?user_id='+CFG.user).then(r=>r.json()),
+      fetch(API+'/api/log/today?user_id='+CFG.user).then(r=>r.json()),
+      fetch(API+'/api/bad-habits?user_id='+CFG.user).then(r=>r.json()),
+    ]);
+
+    // ── Clean streak card ──
+    const cd = habitsRes.clean_streak_days || 0;
+    document.getElementById('cs-num').textContent = cd;
+    const csMessages = {
+      0:'No clean streak yet — your next clean day starts now!',
+      1:'First clean day! The journey of a thousand miles begins with one step.',
+      2:'Two consecutive clean days. Your willpower muscle is growing!',
+      3:'3-day streak! Your cravings are already starting to decrease.',
+      5:'Five clean days! Your gut microbiome is actively shifting for the better.',
+      7:'A FULL CLEAN WEEK! You are no longer a junk food eater — you are a health champion!'
+    };
+    document.getElementById('cs-msg').textContent = csMessages[cd] || `${cd} days of clean eating — extraordinary discipline!`;
+
+    // ── Repeat bad foods ──
+    const repeatBad = habitsRes.repeat_bad_foods || [];
+    const rbArea    = document.getElementById('repeat-bad-area');
+    if (repeatBad.length) {
+      const items = repeatBad.map(f => {
+        const times      = f.times || 1;
+        const pillClass  = times>=3?'danger':times>=2?'warn':'good';
+        const score      = Math.round(f.avg_score || 0);
+        return `<div class="habit-food-item">
+          <div class="habit-food-emoji" style="background:var(--rd)">${f.emoji||'🍽️'}</div>
+          <div style="flex:1">
+            <div class="habit-food-name">${f.food_name}</div>
+            <div class="habit-food-meta">Junk score: ${score} · Last: ${fmtDateTime(f.last_eaten)}</div>
+          </div>
+          <span class="habit-times-pill ${pillClass}">${times}x this week</span>
+        </div>`;
+      }).join('');
+      rbArea.innerHTML = `<div class="habit-card">
+        <div class="habit-card-header"><span class="habit-card-icon">🚫</span><div><div class="habit-card-title">Stop eating these foods</div><div class="habit-card-sub">Repeated junk this week — break the cycle</div></div></div>
+        <div class="habit-food-list">${items}</div>
+      </div>`;
+    } else {
+      rbArea.innerHTML = '<div class="empty" style="padding:1.5rem"><div class="empty-ic">✅</div><div class="empty-t">No repeated bad foods this week</div><div class="empty-s">Great job!</div></div>';
+    }
+
+    // ── Avoided foods ──
+    const avoided  = habitsRes.avoided_this_week || [];
+    const avArea   = document.getElementById('avoided-area');
+    if (avoided.length) {
+      const chips = avoided.map(f => `<div class="avoided-chip">✓ ${f}</div>`).join('');
+      avArea.innerHTML = `<div class="habit-card">
+        <div class="habit-card-header"><span class="habit-card-icon">🏆</span><div><div class="habit-card-title">Successfully avoided</div><div class="habit-card-sub">Had these last week, skipped this week!</div></div></div>
+        <div class="avoided-list">${chips}</div>
+      </div>`;
+    } else {
+      avArea.innerHTML = '<div class="empty" style="padding:1.5rem"><div class="empty-ic">📊</div><div class="empty-t">Keep logging to track avoidances</div></div>';
+    }
+
+    // ── Good habits ──
+    const goodFoods = habitsRes.top_good_foods || [];
+    const ghArea    = document.getElementById('good-habits-area');
+    if (goodFoods.length) {
+      const items = goodFoods.map(f => `<div class="habit-food-item">
+        <div class="habit-food-emoji" style="background:var(--gd)">${f.emoji||'🥗'}</div>
+        <div style="flex:1"><div class="habit-food-name">${f.food_name}</div><div class="habit-food-meta">Eaten ${f.times}x this week</div></div>
+        <span class="habit-times-pill good">✓ ${f.times}x</span>
+      </div>`).join('');
+      ghArea.innerHTML = `<div class="habit-card">
+        <div class="habit-card-header"><span class="habit-card-icon">💚</span><div><div class="habit-card-title">Your good habits</div><div class="habit-card-sub">Keep eating these regularly!</div></div></div>
+        <div class="habit-food-list">${items}</div>
+      </div>`;
+    } else {
+      ghArea.innerHTML = '<div class="empty" style="padding:1.5rem"><div class="empty-ic">🥗</div><div class="empty-t">Log healthy meals to see your good habits</div></div>';
+    }
+
+    // ── Charts ──
+    const hist = histRes.history || [];
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const now  = new Date();
+    const bc   = v => v>=70?'var(--red)':v>=45?'var(--amber)':'var(--green)';
+
+    const dayData = days.map((_,i) => {
+      const t = new Date(now); t.setDate(t.getDate()-(now.getDay()||7)+1+i);
+      const h = hist.find(x=>x.day===t.toISOString().slice(0,10));
+      return h ? Math.round(h.avg_junk||0) : 0;
+    });
+    document.getElementById('junk-chart').innerHTML = dayData.map((v,i) => {
+      const h = Math.round((v/100)*72);
+      return `<div class="bc"><div class="bc-val" style="color:${v?bc(v):'var(--t3)'}">${v||''}</div><div class="bc-fill" style="height:${h||3}px;background:${v?bc(v):'var(--s3)'}"></div><div class="bc-lbl">${days[i].slice(0,1)}</div></div>`;
+    }).join('');
+
+    const calData  = days.map((_,i) => {
+      const t = new Date(now); t.setDate(t.getDate()-(now.getDay()||7)+1+i);
+      const h = hist.find(x=>x.day===t.toISOString().slice(0,10));
+      return h ? Math.round((h.cal_min+h.cal_max)/2)||0 : 0;
+    });
+    const maxCal = Math.max(...calData, CFG.calTarget, 1);
+    document.getElementById('cal-chart').innerHTML = calData.map((v,i) => {
+      const h = Math.round((v/maxCal)*62);
+      return `<div class="cc"><div class="cc-fill" style="height:${h||3}px;opacity:${v?0.85:0.2}"></div><div class="cc-lbl">${days[i].slice(0,1)}</div></div>`;
+    }).join('');
+
+    document.getElementById('bkd').innerHTML = `
+      <div class="bk"><div class="bk-em">✅</div><div class="bk-v" style="color:var(--green)">${statsRes.good_count||0}</div><div class="bk-l">Good foods ever</div></div>
+      <div class="bk"><div class="bk-em">🚫</div><div class="bk-v" style="color:var(--red)">${statsRes.bad_count||0}</div><div class="bk-l">Bad foods ever</div></div>
+      <div class="bk"><div class="bk-em">🔥</div><div class="bk-v" style="color:var(--amber)">${statsRes.today_calories||0}</div><div class="bk-l">Today kcal</div></div>
+      <div class="bk"><div class="bk-em">📊</div><div class="bk-v" style="color:var(--purple)">${statsRes.avg_junk_score||0}</div><div class="bk-l">Avg junk score</div></div>`;
+
+    // AI insights
+    const insEl = document.getElementById('ins-list');
+    insEl.innerHTML = '<div class="loading" style="padding:1rem 0"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>';
+    try {
+      const insRes = await fetch(API+'/api/insights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({log:todayRes.entries||[],goal:CFG.goal})}).then(r=>r.json());
+      const icons  = ['📊','💡','🎯'];
+      insEl.innerHTML = (insRes.insights||[]).map((t,i)=>`<div class="ins"><div class="ins-ic">${icons[i]||'💡'}</div><div class="ins-txt">${t}</div></div>`).join('');
+    } catch { insEl.innerHTML='<div class="ins"><div class="ins-ic">💡</div><div class="ins-txt">Log more meals to unlock AI insights.</div></div>'; }
+
+  } catch {
+    document.getElementById('junk-chart').innerHTML='<div class="empty"><div class="empty-ic">🔌</div><div class="empty-t">Backend offline</div></div>';
+  }
+}
+
+// ── ACHIEVEMENTS ──
+const ACHVS = [
+  {ic:'🌱',n:'First step',  d:'Log 1 meal',      chk:s=>s.total_logged>=1},
+  {ic:'🥗',n:'5 meals',    d:'Log 5 meals',      chk:s=>s.total_logged>=5},
+  {ic:'🥦',n:'10 tracked', d:'Log 10 meals',     chk:s=>s.total_logged>=10},
+  {ic:'✅',n:'Good eater', d:'10 good foods',    chk:s=>s.good_count>=10},
+  {ic:'🔥',n:'Cal tracker',d:'Track 14 meals',   chk:s=>s.total_logged>=14},
+  {ic:'🏆',n:'Health pro', d:'Score above 70',   chk:s=>s.health_score>=70},
+];
+
+async function renderAchievements() {
+  try {
+    const stats = await fetch(API+'/api/stats/summary?user_id='+CFG.user).then(r=>r.json());
+    document.getElementById('achv-grid').innerHTML = ACHVS.map(a => {
+      const on = a.chk(stats);
+      return `<div class="achv ${on?'on':'off'}"><div class="achv-ic">${a.ic}</div><div class="achv-n">${a.n}</div><div class="achv-d">${a.d}</div></div>`;
+    }).join('');
+  } catch {
+    document.getElementById('achv-grid').innerHTML = ACHVS.map(a=>`<div class="achv off"><div class="achv-ic">${a.ic}</div><div class="achv-n">${a.n}</div><div class="achv-d">${a.d}</div></div>`).join('');
+  }
+}
+
+// ── AI DAILY SUMMARY ──
+async function loadDailySummary() {
+  const btn  = document.getElementById('sum-btn');
+  const area = document.getElementById('sum-area');
+  btn.disabled = true;
+  btn.textContent = 'Generating your summary…';
+  area.innerHTML = '<div class="loading"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div><p style="text-align:center;font-size:12px;color:var(--t3);margin-top:-.3rem">AI analyzing your entire day…</p>';
+
+  try {
+    const todayRes = await fetch(API+'/api/log/today?user_id='+CFG.user).then(r=>r.json());
+    const entries  = todayRes.entries || [];
+    const totals   = todayRes.totals  || {};
+
+    if (!entries.length) {
+      area.innerHTML = '<div style="background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:1rem;font-size:13px;color:var(--t2);text-align:center">Log some meals first to get your AI summary!</div>';
+      btn.disabled = false; btn.textContent = '✨ Generate today\'s AI summary & recommendations';
+      return;
+    }
+
+    const r = await fetch(API+'/api/daily-summary', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({entries, totals, goal:CFG.goal, cal_target:CFG.calTarget})
+    });
+    if (!r.ok) { const e=await r.json(); throw new Error(e.error||'Server error'); }
+    const s = await r.json();
+
+    const ratingColor = {Excellent:'var(--green)',Good:'var(--blue)',Fair:'var(--amber)',Poor:'var(--red)'}[s.rating] || 'var(--purple)';
+    const goodChips   = (s.good_choices||[]).map(t=>`<div class="sum-chip"><div class="sum-chip-dot good">✓</div><span>${t}</span></div>`).join('');
+    const badChips    = (s.bad_choices||[]).map(t=>`<div class="sum-chip"><div class="sum-chip-dot bad">✕</div><span>${t}</span></div>`).join('');
+    const recs        = (s.recommendations||[]).map((t,i)=>`<div class="sum-rec"><span class="sum-rec-num">${i+1}</span><span>${t}</span></div>`).join('');
+
+    area.innerHTML = `<div class="sum-card">
+      <div class="sum-header">
+        <div class="sum-rating-row">
+          <span class="sum-emoji">${s.rating_emoji||'📊'}</span>
+          <div>
+            <div class="sum-rating" style="color:${ratingColor}">${s.rating} day</div>
+            <div class="sum-date">${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})}</div>
+          </div>
+        </div>
+        <div class="sum-text">${s.summary||''}</div>
+      </div>
+      <div class="sum-body">
+        <div class="sum-section">
+          <div class="sum-sec-title" style="color:var(--amber)">🔥 Calorie report</div>
+          <div class="sum-cal-verdict">${s.calorie_verdict||''}</div>
+        </div>
+        ${goodChips?`<div class="sum-section"><div class="sum-sec-title" style="color:var(--green)">✅ Good choices</div><div class="sum-chips">${goodChips}</div></div>`:''}
+        ${badChips?`<div class="sum-section"><div class="sum-sec-title" style="color:var(--red)">🚫 What to watch</div><div class="sum-chips">${badChips}</div></div>`:''}
+        ${recs?`<div class="sum-section"><div class="sum-sec-title" style="color:var(--blue)">💡 Recommendations</div><div class="sum-recs">${recs}</div></div>`:''}
+        ${s.tomorrow_plan?`<div class="sum-section" style="margin-bottom:0"><div class="sum-sec-title" style="color:var(--green)">🌅 Tomorrow</div><div class="sum-tomorrow"><div class="sum-tomorrow-lbl">AI Coach</div>${s.tomorrow_plan}</div></div>`:''}
+      </div>
+    </div>`;
+
+    btn.textContent = '🔄 Refresh summary';
+  } catch(err) {
+    area.innerHTML = `<div style="background:var(--rd);border:1px solid var(--rb);border-radius:var(--r2);padding:1rem;font-size:13px;color:var(--red)">${err.message}</div>`;
+    btn.textContent = '✨ Generate today\'s AI summary & recommendations';
+  }
+  btn.disabled = false;
+}
+
+// ── NAV ──
+function goPage(name, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.getElementById('pg-'+name).classList.add('on');
+  el.classList.add('on');
+  if (name==='log')      renderLog();
+  if (name==='progress') renderProgress();
+  if (name==='home')     loadHome();
+  if (name==='profile')  renderAchievements();
+}
+
+// ── TOAST ──
+function showToast(msg, cls='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast on'+(cls?' '+cls:'');
+  setTimeout(()=>t.className='toast', 2800);
+}
+
+// ── RESET ──
+function resetApp() {
+  if (!confirm('Reset all local settings? Server database is separate.')) return;
+  localStorage.removeItem('js_cfg_v5'); location.reload();
+}
+
+// ── BOOT ──
+if (loadC() && CFG.user) {
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('app').classList.add('on');
+  initApp();
+}
+</script>
+</body>
+</html>
